@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 
 class LandScreen extends StatefulWidget {
@@ -10,93 +9,111 @@ class LandScreen extends StatefulWidget {
 
 class _LandScreenState extends State<LandScreen> {
   int progress = 0;
-  bool isPlowed = false;
-  bool isPlanted = false;
-  bool isGrown = false;
-  int crops = 0;
+  bool isTilled = false;
+  bool hasCrop = false;
+  bool isHarvested = false;
+  int coins = 0;
 
-  void plowLand() {
-    if (!isPlowed && progress < 100) {
-      setState(() {
-        progress += 10;
-        if (progress >= 100) {
-          isPlowed = true;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("✅ الأرض أصبحت محروثة!")),
-          );
-        }
-      });
+  void tillLand() async {
+    if (isTilled) return;
+    for (int i = 1; i <= 100; i++) {
+      await Future.delayed(Duration(milliseconds: 20));
+      setState(() => progress = i);
     }
+    setState(() => isTilled = true);
   }
 
   void plantCrop() {
-    if (isPlowed && !isPlanted) {
+    if (isTilled && !hasCrop) {
+      setState(() => hasCrop = true);
+    }
+  }
+
+  void harvestCrop() {
+    if (hasCrop) {
       setState(() {
-        isPlanted = true;
-      });
-      Timer(Duration(seconds: 10), () {
-        setState(() {
-          isGrown = true;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("🌾 المحصول جاهز للحصاد!")),
-        );
+        hasCrop = false;
+        isHarvested = true;
       });
     }
   }
 
-  void harvest() {
-    if (isGrown) {
+  void sellProduct() {
+    if (isHarvested) {
       setState(() {
-        crops += 5;
+        coins += 50;
+        isTilled = false;
         progress = 0;
-        isPlowed = false;
-        isPlanted = false;
-        isGrown = false;
+        isHarvested = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("✅ تم حصد المحصول!")),
-      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("🌾 الأرض")),
+      appBar: AppBar(title: Text("🧑‍🌾 أرض الزراعة")),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           children: [
-            Text("حالة الحرث: $progress%", style: TextStyle(fontSize: 18)),
-            LinearProgressIndicator(value: progress / 100),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: plowLand,
-              child: Text("🔨 حرث الأرض"),
+            Text("💰 النقود: $coins", style: TextStyle(fontSize: 20)),
+            const SizedBox(height: 20),
+            LinearProgressIndicator(
+              value: progress / 100,
+              backgroundColor: Colors.grey[300],
+              color: Colors.brown,
+              minHeight: 10,
             ),
-            if (isPlowed && !isPlanted)
-              ElevatedButton(
-                onPressed: plantCrop,
-                child: Text("🌱 غرس المحصول"),
+            const SizedBox(height: 20),
+            Container(
+              height: 150,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: isHarvested
+                    ? Colors.yellow
+                    : (hasCrop ? Colors.green : (isTilled ? Colors.brown : Colors.grey[400])),
+                borderRadius: BorderRadius.circular(12),
               ),
-            if (isPlanted && !isGrown)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text("⏳ المحصول ينمو... انتظر 10 ثواني"),
+              alignment: Alignment.center,
+              child: Text(
+                isHarvested
+                    ? "✅ جاهز للبيع"
+                    : (hasCrop
+                        ? "🌾 المحصول جاهز"
+                        : (isTilled ? "🪴 مزروع" : "⛏️ غير محروت")),
+                style: const TextStyle(fontSize: 22, color: Colors.white),
               ),
-            if (isGrown)
-              ElevatedButton(
-                onPressed: harvest,
-                child: Text("🔪 حصاد المحصول"),
+            ),
+            const SizedBox(height: 30),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: tillLand,
+                  icon: Icon(Icons.agriculture),
+                  label: Text("حرث"),
+                ),
+                ElevatedButton.icon(
+                  onPressed: plantCrop,
+                  icon: Icon(Icons.grass),
+                  label: Text("زرع"),
+                ),
+                ElevatedButton.icon(
+                  onPressed: harvestCrop,
+                  icon: Icon(Icons.scale),
+                  label: Text("حصد"),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: sellProduct,
+              icon: Icon(Icons.store),
+              label: Text("بيع المنتج"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
               ),
-            SizedBox(height: 30),
-            Text("📦 المحصول: $crops", style: TextStyle(fontSize: 20)),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context, crops); // نرجع المحصول
-              },
-              child: Text("🏪 الرجوع وبيع المحصول"),
             ),
           ],
         ),
